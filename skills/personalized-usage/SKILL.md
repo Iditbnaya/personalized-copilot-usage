@@ -1,6 +1,6 @@
 ---
 name: personalized-usage
-description: "Report models used, total tokens, and daily/session trends from personal Copilot app history; separately show total credits and authorized dollar costs when available. Works for non-admin users without Copilot CLI or billing access."
+description: "Report models, total tokens, estimated per-model USD cost and estimated credit equivalents from personal Copilot app history without browser login. Retrieve actual account credits separately when requested. No Copilot CLI or billing-admin role required."
 argument-hint: "[usage question or time range]"
 user-invocable: true
 disable-model-invocation: false
@@ -17,13 +17,20 @@ ask the user to paste usage output. This user-level skill works across projects.
 
 For models, tokens, requests, activity, daily trends, session breakdowns, or
 "what did I use?", first use the app's personal `session_store_sql` tool as
-described in [Local activity](references/local-activity.md). An overview starts
-with local model activity, then optionally adds current-cycle account credits.
+described in [Local activity](references/local-activity.md). The default local
+overview includes token-based **estimated USD per model and overall**, using
+[Token pricing](references/token-pricing.md) and its offline decimal calculator.
+It also shows a clearly labeled **estimated credit equivalent**, not measured
+account credits. No browser lookup or login is needed for these estimates.
+For only models/tokens/activity, do not add browser authentication.
 Do not block the local report on browser sign-in.
 
-For account-wide credits, budgets, remaining quota, or reset dates, use the
-Copilot settings browser procedure below. Keep this account source separate
-from local activity: local tokens cannot be converted into billed credits.
+For actual account credits, billed charges, budgets, remaining quota, reset
+dates, or an explicit account overview, attempt the account lookup below.
+Do not confuse estimated credits with actual account consumption. If sign-in is required, return
+available local results and prompt for login through the chosen browser,
+then finish the account portion after confirmation. Keep sources and periods
+separate: local tokens cannot be converted into billed credits.
 
 If session-history tools are unavailable in another host, say local activity
 cannot be retrieved there. Do not inspect raw databases, logs, credentials, or
@@ -36,15 +43,20 @@ Assume this skill must work for ordinary organization-managed Copilot users.
 Do NOT run the billing script first. Do NOT send these users to billing settings,
 ask for billing permissions, require a PAT, or request administrator access.
 
-1. Follow [Browser session reuse](references/browser-session.md) first. Prefer
-   an already-connected personal GitHub tab with a working read tool and a
-   provider-issued page handle. Bind the report to that provider; an app Browser
+1. Follow [Browser session reuse](references/browser-session.md) first. Reuse
+   the working browser provider already selected for this task. An open native
+   Browser panel is not by itself a provider selection. If no provider is
+   selected, choose one with a complete discovery/navigation/read tool chain;
+   prefer an already-connected personal GitHub tab in that usable provider.
+   Bind the report to that provider; an app Browser
    canvas and Playwright are not interchangeable. If capability discovery
    errors, retry once and report a tool error if it still fails; do not infer
    that the capability is absent or that login is required. If a successful
-   discovery shows the canvas cannot return a
-   readable handle, report a tool-access limitation rather than asking for login
-   in a page you cannot inspect. Reuse the same browser context and page handle
+   discovery shows the canvas cannot return a readable handle, mark ONLY that
+   native route unavailable. Continue through an available Playwright provider
+   using the fallback rules in the reference; do not stop the whole lookup just
+   because `open_browser_page` is missing. Do not ask for login in a page you
+   cannot inspect. Reuse the same browser context and page handle
    throughout. Inspect its current page before navigating;
    refresh the usage card when collecting current values. Navigate in that
    context to https://github.com/settings/copilot only when needed. If that
@@ -172,6 +184,8 @@ explicitly labeled partial. Errors are not empty successful periods.
 
 References:
 - https://docs.github.com/en/copilot/how-tos/manage-and-track-spending/monitor-ai-usage
+- https://docs.github.com/en/billing/concepts/product-billing/github-copilot-billing
+- https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing
 - https://docs.github.com/en/rest/billing/usage
 - https://docs.github.com/en/billing/tutorials/automate-usage-reporting
 
@@ -216,16 +230,21 @@ References:
 
 ### Required overview totals
 
-Include these three summary metrics, each with its source and period:
+Include these summary metrics for a full overview, each with its source and
+period. A default/local overview does not require account lookup; identify the
+actual-account portion as not requested unless the user asked for it:
 
 | Metric | Value | Scope |
 |---|---|---|
 | Total tokens (input + output, derived) | Recorded total, partial total, or unavailable | Local app records for the requested range |
+| Estimated token cost (USD) | Decimal estimate at verified GitHub Copilot model rates | Priced local records only; disclose assumptions and exclusions |
+| Estimated AI credit equivalent | Estimated USD divided by the verified USD/credit rate | Same priced local records; not measured account credits |
 | Total AI credits consumed | Source-reported total or unavailable | Account current cycle, or authorized personal billing range |
-| Usage cost (USD) | Authorized USD amount or unavailable | Exact period and scope of the cost source |
+| Credit usage value (USD, derived) | AI credits consumed multiplied by the verified published USD/credit rate, or a specific missing-source reason | Same scope and period as those credits; not an invoice |
+| Actual billed usage cost (USD) | Authorized billed amount, or not exposed by the available source | Exact scope and period of the billing source |
 
 For local model rows, show **Model | Input tokens | Output tokens | Total
-tokens | Cached tokens** and a **Total** row covering all returned models.
+tokens | Cached tokens | Estimated USD** and a **Total** row covering all returned models.
 Compute total tokens as input + output without adding cached/reasoning counters.
 If either field has missing samples, label the sum "partial recorded total";
 if a whole component is unavailable, do not present the sum as total tokens.
@@ -238,20 +257,52 @@ there is no overlap. Never add ai_credit and premium_request report quantities
 together or label premium requests as AI credits. Keep included consumption,
 additional consumption, and billed usage distinct.
 
-Show cost only when the accessible personal source identifies USD. For an
+### Published USD value versus actual charges
+
+GitHub's official billing and model-pricing documentation defines
+**1 GitHub AI credit = $0.01 USD** (checked 2026-10-04). Verify the applicable
+rate from those official sources before using it for a new report; cite the
+source and calculation. This allows a non-admin user's visible AI credits
+to have a USD usage value without accessing an admin billing dashboard.
+
+Calculate **Credit usage value (USD, derived)** as
+`AI credits consumed * published USD per AI credit`, using decimal arithmetic
+and rounding only the final displayed value. For the documented $0.01 rate,
+a fictional 250-credit consumption is $2.50 of usage value.
+This is a unit conversion, not a token-based estimate and NOT an actual billed
+charge. Included allowances, discounts, taxes, and organization payment rules
+may change what is paid. Do not call it "you owe" or infer personal liability.
+
+Only apply this conversion to quantities explicitly identified as GitHub
+**AI credits consumed**. Do not convert premium requests, raw token counts,
+the displayed limit, or a remaining balance into consumed-credit value.
+Do not allocate account credit value across local model rows: there is no
+per-model attribution in a total-only usage card. If the credits or applicable
+rate cannot be verified, name the missing input instead of guessing a dollar
+amount. State any source rounding or partial-coverage limitation.
+This account-based conversion is separate from the default local token-based
+estimate; do not combine their totals or attribute the account total to local models.
+
+Show **Actual billed usage cost (USD)** only when the accessible personal source
+identifies an actual USD charge. For an
 authorized billing report, sum netAmount for billed usage cost, independently
 from grossAmount (gross usage value) and discountAmount (discounts), with
 matching scope/period/currency. Label these distinctions if more than one is
 shown. Use decimal arithmetic; round only the final displayed currency total.
 An unspecified currency must be shown as "billing amount (currency unspecified)",
-not "$" or USD. Do not convert credits or local tokens to dollars using guessed
-prices, internal telemetry multipliers, or provider API pricing. Do not treat
+not "$" or USD. Local token-to-USD estimates are permitted ONLY through the
+verified GitHub Copilot rates and explicit assumptions in `token-pricing.md`;
+they are not actual charges. Do not use guessed prices, internal telemetry
+multipliers, or another provider's API pricing. Do not treat
 usage cost as the Copilot subscription fee or the user's personal liability.
 
-For managed users without authorized cost visibility, display
-**Usage cost (USD): Unavailable to this account**. Do not request admin/billing
-permissions or open organization dashboards to fill this field.
-When credits are unavailable, retain the local token report and clearly say
+For managed users whose self-service page has credits but no billed amount,
+still show the derived credit usage value. Label actual billed cost
+**Not exposed by the self-service usage page**; lack of this field does not
+invalidate the published-rate conversion. Do not claim a permission denial
+without evidence, request admin/billing permissions, or open organization
+dashboards to fill the actual-charge field.
+When actual account credits are unavailable, retain the local token/estimated-cost report and clearly say
 credits were not retrieved. A previously reported credit value is historical
 unless refreshed; timestamp it rather than passing it off as current.
 
@@ -264,10 +315,15 @@ billing consumption, and total cross-product activity. Always name the actual
 source. Never respond to a managed user with instructions to sign into billing
 settings. No copied `/usage` output or CLI installation is required, but
 automatic reading depends on an accessible authenticated browser.
+For an account lookup, include a short status such as **Reused existing
+sign-in**, **Login required**, **Browser tool unavailable**, or **Lookup failed**,
+based on actual tool observations. No login prompt is expected when a valid
+session is reused. An unavailable source, an unrequested lookup, and an absent
+billed-cost field are different outcomes; do not collapse them into "unavailable."
 
 For model/activity questions, lead with the local model table rather than a
 quota percentage. Show model identifier, input and output
-tokens, and cached tokens when recorded. Clearly label partial fields and
+tokens, cached tokens when recorded, and estimated USD cost. Clearly label partial fields and
 coverage. Omit API-event counts from default tables and summaries; retain counts
 internally for completeness checks. Show them only if the user explicitly asks
 for API-call/event counts. Use plain Markdown and inline code for formulas, never duplicated

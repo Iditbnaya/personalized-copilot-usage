@@ -19,7 +19,7 @@ API-event counts and include a derived total-token column.
 
 | Source | Reports | Requirements |
 |---|---|---|
-| Local app history | Recorded models, input/output tokens, cached-token counters, daily trends; API-event counts only on explicit request | Host must expose the personal `session_store_sql` tool with the supported local usage schema |
+| Local app history | Models, tokens, estimated per-model USD and credit equivalents, daily trends | Personal `session_store_sql` tool, verified GitHub Copilot model rates, and Python 3.9+ for the offline calculator |
 | Copilot settings | Current-cycle credits, displayed limit and reset date when visible | Browser automation tool with the user's authenticated GitHub session |
 | Personal billing API, optional | Billing quantities and model aggregates for personally purchased plans | Python 3.9+ and existing authorized GitHub authentication |
 
@@ -31,7 +31,8 @@ inventing metrics.
 
 Local records do not cover all devices, IDEs, or GitHub products. Local model
 identifiers may differ from billing model labels. Recorded API events are not
-premium requests or AI credits. No token-to-credit conversion is performed.
+premium requests or AI credits. Estimated credit equivalents are clearly
+separate from measured account credit consumption.
 
 For organization-managed Business/Enterprise users, the skill uses their own
 **Copilot settings > Usage this cycle**, not admin billing APIs. This view may
@@ -102,8 +103,12 @@ to this repository.
 **GHCP App browser compatibility:** the native Browser canvas and Playwright MCP
 are separate tool surfaces. A native canvas needs its own readable page handle;
 opening a panel alone is insufficient. If that discovery capability is missing,
-the skill must report a tool-access limitation, not repeatedly request login or
-silently verify a different browser.
+the skill marks only the native route unavailable. It reuses an already-selected
+Playwright connection, or chooses a complete available provider when none was
+selected. An explicitly selected/shared native tab requires permission before
+switching providers. If neither route is usable, it reports the specific
+tool-access limitation rather than requesting login it cannot verify.
+This fallback does not repair the app's missing `open_browser_page` registration.
 
 See [browser validation and reproducible tests](docs/browser-validation.md) for
 the tested boundaries and limitations. Synthetic tests, live GitHub checks,
@@ -121,19 +126,38 @@ Invoke `/personalized-usage` in hosts supporting user-invocable skills, or ask:
 Model questions use local history first and are not blocked on browser sign-in.
 Credit questions use Copilot settings. The reports identify their source,
 coverage, period, missing fields, and derived calculations.
-Default model tables show **Model | Input tokens | Output tokens | Total tokens | Cached tokens**,
+Default model tables show **Model | Input tokens | Output tokens | Total tokens | Cached tokens | Estimated USD**,
 with an overall Total row. Total tokens are derived as input + output; cached
 and reasoning counters are not added again. Missing samples are labeled partial.
 API-event counts are omitted unless explicitly requested; they remain internal
 for checking whether token records are complete.
 
-Overview summaries also include **total AI credits consumed** and **USD usage
-cost**, each with its own source, scope, and period. These are shown only from
-authorized account data; otherwise they are explicitly unavailable. Managed
-users may see credits but not dollar costs. The skill never converts local
-tokens to credits or dollars and never requests admin access to fill missing
-financial fields. Billed usage cost is separate from gross usage value,
-discounts, and subscription fees. A currency-unspecified amount is not labeled USD.
+**The default cost report needs no browser login.** It estimates local token
+usage using [GitHub Copilot's published model rates](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing),
+separating uncached input, cached reads, cache writes, output, and per-request
+context tiers. It shows per-model and total estimated USD plus an estimated
+credit equivalent. See [calculation and assumptions](skills/personalized-usage/references/token-pricing.md).
+
+The input/cache convention is an explicit assumption, not a fact established
+by column names. Missing data, impossible cache totals, unknown models, and
+ambiguous tiers are excluded with a reason and partial-estimate label. Current
+rates reprice the selected history; this does not reconstruct a historical bill.
+
+Actual account credits, remaining quota, and billed charges use a separate
+account lookup only when requested.
+
+[GitHub defines one AI credit as $0.01 USD](https://docs.github.com/en/billing/concepts/product-billing/github-copilot-billing).
+After verifying the applicable published rate, the skill can show the USD value
+of an ordinary user's visible credit consumption even when billed charges are
+not exposed. For example, **250 consumed AI credits = $2.50 usage value**.
+That does **not** mean the user owes $2.50: included allowances, discounts,
+taxes, and organization billing may affect the actual charge.
+
+The skill never labels token-based estimates as billed charges, treats premium
+requests as AI credits, or spreads a total account value across local models.
+It does not request admin access to retrieve billed charges. The report states
+whether an account lookup reused a sign-in, needs login, failed, or was not
+requested. A valid reused session should not trigger a new login page.
 
 ## Optional personal-plan billing script
 
@@ -180,8 +204,9 @@ python -B -m unittest discover -s .\skills\personalized-usage\tests -v
 ```
 
 Tests cover identity validation, period validation, unit/model aggregation,
-decimal precision, missing data, error handling, non-admin routing, and local
-SQL examples against synthetic fixtures. They do not prove browser access or
+decimal precision, per-request pricing tiers, input/cache assumptions, unknown
+prices, partial estimate coverage, missing data, error handling, non-admin
+routing, and local SQL examples against synthetic fixtures. They do not prove browser access or
 tool availability in every host.
 Opt-in live browser tests are in `skills/personalized-usage/tests/browser`;
 they run against a loopback-only synthetic fixture in a **fresh disposable test
@@ -203,6 +228,8 @@ node --test .\skills\personalized-usage\tests\browser\session_reuse.test.cjs
 - [Monitoring GitHub AI Credits usage](https://docs.github.com/en/copilot/how-tos/manage-and-track-spending/monitor-ai-usage)
 - [Billing usage REST API](https://docs.github.com/en/rest/billing/usage)
 - [Automating usage reporting](https://docs.github.com/en/billing/tutorials/automate-usage-reporting)
+- [GitHub AI credit USD unit](https://docs.github.com/en/billing/concepts/product-billing/github-copilot-billing)
+- [Copilot models and pricing](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing)
 
 ## License
 

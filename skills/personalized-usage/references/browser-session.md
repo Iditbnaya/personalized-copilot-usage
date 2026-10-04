@@ -37,6 +37,34 @@ context for the report. Tool listings are session-specific; a missing operation
 here is not proof that no app version supports it. Do not guess endpoints or
 inspect app internals to bypass missing tool capabilities.
 
+### Incomplete native route: use a complete available alternative
+
+The absence of `open_browser_page` blocks the native `read_page` chain, not
+every browser integration. A browser panel merely being open is not an
+instruction to use it.
+
+1. If Playwright is already the chosen provider for this task, reuse it first:
+   call its `browser_tabs`, select the existing relevant tab, and read/refresh
+   it. Do not rediscover the incomplete native route or ask to choose again.
+2. If no provider was chosen and the native discovery/read chain is incomplete,
+   check whether Playwright's tab discovery, navigation, and snapshot/read tools
+   are actually available. If they are, choose Playwright and state which
+   browser is being used. This is a first selection, not a silent switch.
+3. If the user explicitly asked to use a native/shared tab, or a native
+   provider had already been chosen, explain its missing handle capability
+   and ask before switching to Playwright. Honor a refusal or native-only request.
+4. Once Playwright is chosen, determine authentication only from its own page:
+   reuse a valid session or prompt in its window when login is required.
+   Never pass Playwright tab indices to native `read_page`.
+5. If no complete browser provider is available, name the missing capability
+   and return available local results. Do not loop on the same capability
+   error, guess `page_id`, claim to have repaired the app integration, or request
+   login that the assistant cannot verify.
+
+This fallback changes skill routing, not the app's tool registration. Native
+support requires the app to expose its page-discovery operation or a documented
+equivalent that actually returns the required handle.
+
 ## Current-state decision
 
 Re-evaluate authentication on every account-usage request, after the navigation

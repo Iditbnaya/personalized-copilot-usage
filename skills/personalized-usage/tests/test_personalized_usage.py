@@ -118,15 +118,49 @@ class UsageTests(unittest.TestCase):
         self.assertIn("Retry the lookup once", normalized)
         self.assertIn("only a successful capability/tool listing", normalized)
 
+    def test_missing_native_opener_allows_explicit_playwright_fallback(self):
+        root = Path(__file__).resolve().parents[1]
+        skill = " ".join((root / "SKILL.md").read_text(encoding="utf-8").split())
+        reference = " ".join(
+            (root / "references" / "browser-session.md").read_text(encoding="utf-8").split()
+        )
+        self.assertIn("mark ONLY that native route unavailable", skill)
+        self.assertIn("do not stop the whole lookup", skill)
+        self.assertIn("If Playwright is already the chosen provider", reference)
+        self.assertIn("This is a first selection, not a silent switch", reference)
+        self.assertIn("ask before switching to Playwright", reference)
+        self.assertIn("If no complete browser provider is available", reference)
+
     def test_overview_totals_have_financial_source_guards(self):
         skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Total tokens (input + output, derived)", skill)
         self.assertIn("Total AI credits consumed", skill)
-        self.assertIn("Usage cost (USD)", skill)
+        self.assertIn("Credit usage value (USD, derived)", skill)
+        self.assertIn("Actual billed usage cost (USD)", skill)
         self.assertIn("billing amount (currency unspecified)", skill)
         self.assertIn("partial recorded total", skill)
         self.assertIn("Do not total a truncated model table", skill)
         self.assertIn("Never add ai_credit and premium_request", skill)
+
+    def test_local_estimates_skip_browser_but_actual_account_requests_do_not(self):
+        skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
+        normalized = " ".join(skill.split())
+        self.assertIn("No browser lookup or login is needed for these estimates", normalized)
+        self.assertIn("actual account credits", normalized)
+        self.assertIn("an explicit account overview, attempt the account lookup", normalized)
+        self.assertIn("references/token-pricing.md", normalized)
+        self.assertIn("Reused existing sign-in", normalized)
+        self.assertIn("No login prompt is expected when a valid session is reused", normalized)
+
+    def test_published_credit_value_is_distinct_from_actual_billed_cost(self):
+        skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
+        normalized = " ".join(skill.split())
+        self.assertIn("1 GitHub AI credit = $0.01 USD", normalized)
+        self.assertIn("AI credits consumed * published USD per AI credit", normalized)
+        self.assertIn("NOT an actual billed charge", normalized)
+        self.assertIn("Do not convert premium requests, raw token counts", normalized)
+        self.assertIn("Do not allocate account credit value across local model rows", normalized)
+        self.assertIn("Not exposed by the self-service usage page", normalized)
 
     def test_local_activity_routes_before_browser(self):
         skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
