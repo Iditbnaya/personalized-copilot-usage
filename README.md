@@ -9,11 +9,11 @@ extension, or universal telemetry collector.
 
 ## Example report
 
-![Example detailed local model-usage report showing model names, input/output tokens, and cached-read tokens](docs/images/model-usage-example.png)
+![Example local usage report showing models, input/output and total tokens, cached tokens, and estimated USD cost](docs/images/model-usage-example.png)
 
-User-contributed example of the detailed view, not live data. This screenshot
-includes optional API-event and session counts; current default reports hide
-API-event counts and include a derived total-token column.
+User-contributed example of the default local report, not live data. It shows
+token totals and estimated per-model USD costs. These estimates cover recorded
+local activity and are not actual billed charges.
 
 ## What it can report
 
