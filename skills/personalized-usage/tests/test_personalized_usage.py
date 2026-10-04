@@ -42,6 +42,16 @@ class FakeGitHub:
 
 
 class UsageTests(unittest.TestCase):
+    def test_overview_totals_have_financial_source_guards(self):
+        skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Total tokens (input + output, derived)", skill)
+        self.assertIn("Total AI credits consumed", skill)
+        self.assertIn("Usage cost (USD)", skill)
+        self.assertIn("billing amount (currency unspecified)", skill)
+        self.assertIn("partial recorded total", skill)
+        self.assertIn("Do not total a truncated model table", skill)
+        self.assertIn("Never add ai_credit and premium_request", skill)
+
     def test_local_activity_routes_before_browser(self):
         skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Do not block the local report on browser sign-in", skill)
@@ -80,6 +90,10 @@ class UsageTests(unittest.TestCase):
         self.assertEqual(models[0]["input_tokens"], 100)
         self.assertEqual(models[0]["input_samples"], 1)
         self.assertEqual(models[0]["output_tokens"], 50)
+        self.assertEqual(models[0]["output_samples"], 2)
+        self.assertEqual(models[1]["input_samples"], 1)
+        self.assertEqual(models[1]["output_samples"], 1)
+        self.assertEqual(models[1]["input_tokens"] + models[1]["output_tokens"], 60)
         self.assertEqual(len(results[2]), 2)
         self.assertEqual(len(results[3]), 2)
         empty = queries[1].replace("START_DATE", "2026-12-01").replace(

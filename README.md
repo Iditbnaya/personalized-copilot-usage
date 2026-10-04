@@ -70,9 +70,19 @@ Invoke `/personalized-usage` in hosts supporting user-invocable skills, or ask:
 Model questions use local history first and are not blocked on browser sign-in.
 Credit questions use Copilot settings. The reports identify their source,
 coverage, period, missing fields, and derived calculations.
-Default model tables show **Model | Input tokens | Output tokens | Cached tokens**.
+Default model tables show **Model | Input tokens | Output tokens | Total tokens | Cached tokens**,
+with an overall Total row. Total tokens are derived as input + output; cached
+and reasoning counters are not added again. Missing samples are labeled partial.
 API-event counts are omitted unless explicitly requested; they remain internal
 for checking whether token records are complete.
+
+Overview summaries also include **total AI credits consumed** and **USD usage
+cost**, each with its own source, scope, and period. These are shown only from
+authorized account data; otherwise they are explicitly unavailable. Managed
+users may see credits but not dollar costs. The skill never converts local
+tokens to credits or dollars and never requests admin access to fill missing
+financial fields. Billed usage cost is separate from gross usage value,
+discounts, and subscription fees. A currency-unspecified amount is not labeled USD.
 
 ## Optional personal-plan billing script
 

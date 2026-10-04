@@ -150,10 +150,15 @@ as the complete population.
 ## Output
 
 Lead with **Local Copilot app activity**, requested date range and collection
-time. Use a model table with model, input tokens, output tokens and
-cache read tokens. Keep event counts internal for completeness checks; do not
+time. Use a model table with model, input tokens, output tokens, derived
+total tokens (input + output), and cache read tokens. Add a Total row across
+all models, preserving missing-sample and truncation warnings. Do not add cache
+or reasoning counters into total tokens. Keep event counts internal for completeness checks; do not
 display them unless the user explicitly asks for API-call/event counts.
 Include other fields only when useful to the question.
 Footnote that the report covers available local records only, and is not
 account-wide billing usage. If a browser credit card is available, show it in
 a separate **GitHub current-cycle credits** section with its own period.
+Include total AI credits and USD usage cost in the overview only from their
+authorized sources, or explicitly mark them unavailable. Local history cannot
+supply either financial metric.
