@@ -1,6 +1,6 @@
 ---
 name: personalized-usage
-description: "Report models used, recorded requests, token counts, and daily/session trends from personal Copilot app history; separately read current-cycle credits from Copilot settings. Works for non-admin users without Copilot CLI or billing access."
+description: "Report models used, token counts, and daily/session trends from personal Copilot app history; separately read current-cycle credits from Copilot settings. Works for non-admin users without Copilot CLI or billing access."
 argument-hint: "[usage question or time range]"
 user-invocable: true
 disable-model-invocation: false
@@ -196,9 +196,11 @@ settings. No copied `/usage` output or CLI installation is required, but
 automatic reading depends on an accessible authenticated browser.
 
 For model/activity questions, lead with the local model table rather than a
-quota percentage. Show model identifier, recorded API events, input and output
+quota percentage. Show model identifier, input and output
 tokens, and cached tokens when recorded. Clearly label partial fields and
-coverage. Use plain Markdown and inline code for formulas, never duplicated
+coverage. Omit API-event counts from default tables and summaries; retain counts
+internally for completeness checks. Show them only if the user explicitly asks
+for API-call/event counts. Use plain Markdown and inline code for formulas, never duplicated
 LaTeX/HTML math. Call utilization **Percentage of displayed limit used**.
 Show unsupported account-wide metrics separately; their absence does not
 prevent reporting available local activity.

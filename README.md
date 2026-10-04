@@ -11,7 +11,7 @@ extension, or universal telemetry collector.
 
 | Source | Reports | Requirements |
 |---|---|---|
-| Local app history | Recorded models, API events, input/output tokens, cached-token counters, daily trends, top sessions | Host must expose the personal `session_store_sql` tool with the supported local usage schema |
+| Local app history | Recorded models, input/output tokens, cached-token counters, daily trends; API-event counts only on explicit request | Host must expose the personal `session_store_sql` tool with the supported local usage schema |
 | Copilot settings | Current-cycle credits, displayed limit and reset date when visible | Browser automation tool with the user's authenticated GitHub session |
 | Personal billing API, optional | Billing quantities and model aggregates for personally purchased plans | Python 3.9+ and existing authorized GitHub authentication |
 
@@ -65,12 +65,14 @@ Invoke `/personalized-usage` in hosts supporting user-invocable skills, or ask:
 - "Which models did I use this month?"
 - "Show my recorded input and output tokens by model."
 - "Show my local usage for the last 7 days."
-- "Which recorded sessions had the most API events?"
 - "How many AI credits have I used this cycle?"
 
 Model questions use local history first and are not blocked on browser sign-in.
 Credit questions use Copilot settings. The reports identify their source,
 coverage, period, missing fields, and derived calculations.
+Default model tables show **Model | Input tokens | Output tokens | Cached tokens**.
+API-event counts are omitted unless explicitly requested; they remain internal
+for checking whether token records are complete.
 
 ## Optional personal-plan billing script
 
