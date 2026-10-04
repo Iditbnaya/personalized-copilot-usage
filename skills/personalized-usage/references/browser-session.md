@@ -5,6 +5,38 @@ transfer login from a normal browser, an editor, or GitHub CLI into a different
 automation profile. Keep authentication in the browser's own private profile;
 never serialize it into skill files, screenshots, messages, or a repository.
 
+## GHCP App: establish a usable provider first
+
+GitHub documents MCP servers and canvases as app capabilities, not as one shared
+authentication context. Check the actual tools exposed in the current session:
+
+- **App Browser canvas:** inspect `list_canvas_capabilities("browser")`. Its
+  `read_page` and `navigate_page` actions may require a `page_id` returned by
+  `open_browser_page`. Only use that operation if it is actually exposed and
+  follow its current schema. A response containing just `instanceId`, `url`,
+  and `input` from `open_canvas` does not supply that required `page_id`.
+  Never substitute a canvas instance ID, URL, or guessed value.
+- **Failed capability lookup:** an errored or timed-out capability listing is
+  `unknown`, not proof that a capability is absent. Retry the lookup once; if
+  it fails again, report the tool error rather than mark the provider unsupported
+  or ask for login.
+- **Missing native discovery:** only a successful capability/tool listing can
+  establish that the required page-discovery operation is absent. In that case,
+  the native route is tool-unavailable, not signed out. Do not ask the
+  user to log in in a canvas whose authenticated state you cannot read.
+- **Playwright MCP:** it has its own `browser_tabs`, `browser_navigate`,
+  `browser_snapshot`/`browser_find`, and interaction tools. Its tab indices
+  and element refs are valid only for that Playwright connection.
+- **Provider changes:** if a user is working in the native canvas but only
+  Playwright is readable, explain the distinction and ask before switching.
+  Never check Playwright to decide whether the native canvas is signed in.
+  Opening a native canvas is not a way to bring a Playwright window forward.
+
+Keep the chosen provider and returned page handle/tab identity in conversation
+context for the report. Tool listings are session-specific; a missing operation
+here is not proof that no app version supports it. Do not guess endpoints or
+inspect app internals to bypass missing tool capabilities.
+
 ## Current-state decision
 
 Re-evaluate authentication on every account-usage request, after the navigation
@@ -51,10 +83,27 @@ cookie values to distinguish these cases; use GitHub's rendered response.
 5. If the card and correct identity are visible, report the values without
    asking for login. A missing card, 403, 404, loading state, network error,
    or browser-tool error does not by itself prove the user is signed out.
+   Read the visible card using a fresh accessibility snapshot/ref. The real
+   GitHub page can contain both a visible "Usage this cycle" label and the same
+   text in a hidden tooltip. A global exact-text locator can fail strict mode.
+   Inspect the matches and target the visible card using observed structure;
+   do not choose the first arbitrary text match or turn a locator failure into
+   a login prompt. Do not hardcode a user-specific heading or transient ref in
+   the reusable skill.
 
 Tool names may be prefixed differently in each host. Use available tools, not
 invented ones. If shared browser tools need a page ID, obtain it through their
 documented page-discovery operation; never use a canvas ID or URL in its place.
+
+### Recover a stale handle without changing the authentication context
+
+After a tab/browser reconnect, a tool can fail with `ERR_ABORTED`, a detached
+frame, or a stale page handle before navigation settles. This is `unknown`,
+not `authentication_required`. Rediscover the current page using the SAME
+provider, retry the intended read/navigation once, and inspect the resulting
+page. Do not reset the profile or open another provider to handle it.
+If it still fails, report the tool error; do not loop or request login.
+Do not navigate over an authentication step the user is actively completing.
 
 ## Prompt and recheck when authentication is required
 
@@ -155,7 +204,13 @@ its profile. Verify the usage page in the same context. Cross-restart retention
 is verified only after a user-approved restart of that provider and a fresh
 identity/card read. Do not restart unrelated work to test persistence, and do
 not claim retention merely because the configuration file was changed.
+Distinguish closing/reopening a tab, closing/reconnecting the browser, restarting
+the MCP server, and restarting the app. A pass at one boundary does not prove
+the others. Check the tool's actual behavior: `browser_close` may close only
+the page, not the browser process.
 
 References:
+- https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app
+- https://docs.github.com/en/copilot/how-tos/github-copilot-app/working-with-canvas-extensions
 - https://github.com/microsoft/playwright-mcp#user-profile
 - https://github.com/microsoft/playwright-mcp#configuration

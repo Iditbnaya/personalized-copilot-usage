@@ -99,6 +99,16 @@ The skill cannot guarantee retention if the host uses temporary profiles or
 GitHub/SSO expires the session. Cookies and auth state must never be uploaded
 to this repository.
 
+**GHCP App browser compatibility:** the native Browser canvas and Playwright MCP
+are separate tool surfaces. A native canvas needs its own readable page handle;
+opening a panel alone is insufficient. If that discovery capability is missing,
+the skill must report a tool-access limitation, not repeatedly request login or
+silently verify a different browser.
+
+See [browser validation and reproducible tests](docs/browser-validation.md) for
+the tested boundaries and limitations. Synthetic tests, live GitHub checks,
+and instruction-content tests are reported separately.
+
 ## Use
 
 Invoke `/personalized-usage` in hosts supporting user-invocable skills, or ask:
@@ -173,6 +183,20 @@ Tests cover identity validation, period validation, unit/model aggregation,
 decimal precision, missing data, error handling, non-admin routing, and local
 SQL examples against synthetic fixtures. They do not prove browser access or
 tool availability in every host.
+Opt-in live browser tests are in `skills/personalized-usage/tests/browser`;
+they run against a loopback-only synthetic fixture in a **fresh disposable test
+browser**, never the browser used for real GitHub sign-ins. Review the script
+first: MCP code-run tools execute arbitrary code with server-process privileges.
+See the [safety requirements and instructions](docs/browser-validation.md#repeat-the-synthetic-browser-checks).
+
+The actual browser suite is opt-in and does not run in the current CI workflow.
+The fixture server's threading, synthetic-session, and markup regression tests
+**do run** in the Python suite and CI. The suite's guard/error-path tests use
+Node test doubles and also run in CI:
+
+```powershell
+node --test .\skills\personalized-usage\tests\browser\session_reuse.test.cjs
+```
 
 ## Sources
 

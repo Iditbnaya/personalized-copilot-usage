@@ -37,8 +37,15 @@ Do NOT run the billing script first. Do NOT send these users to billing settings
 ask for billing permissions, require a PAT, or request administrator access.
 
 1. Follow [Browser session reuse](references/browser-session.md) first. Prefer
-   an already-connected personal GitHub tab, and reuse the same browser context
-   and page handle throughout. Inspect its current page before navigating;
+   an already-connected personal GitHub tab with a working read tool and a
+   provider-issued page handle. Bind the report to that provider; an app Browser
+   canvas and Playwright are not interchangeable. If capability discovery
+   errors, retry once and report a tool error if it still fails; do not infer
+   that the capability is absent or that login is required. If a successful
+   discovery shows the canvas cannot return a
+   readable handle, report a tool-access limitation rather than asking for login
+   in a page you cannot inspect. Reuse the same browser context and page handle
+   throughout. Inspect its current page before navigating;
    refresh the usage card when collecting current values. Navigate in that
    context to https://github.com/settings/copilot only when needed. If that
    page redirects or changes, follow the signed-in profile menu's **Copilot
@@ -52,6 +59,9 @@ ask for billing permissions, require a PAT, or request administrator access.
    Enterprise users, GitHub documents individual AI credit consumption here.
    A user budget, when set, may appear as credits consumed out of the user's
    budget total. With no user-level budget, only consumption may be shown.
+   Use fresh accessibility references for the visible card. Matching text can
+   also occur in a hidden tooltip; ambiguous or missing locators are not evidence
+   that the user is signed out.
 4. Report only the values and period actually displayed. If the card says
    "this cycle" without dates, use that label; do not invent month boundaries.
    A same-card "used / total AI credits" presentation supplies compatible
@@ -78,6 +88,9 @@ or earlier prompt does not override the current state. A cookie's mere presence
 does not prove it is valid; let the browser send it normally without reading it.
 No open tab does not mean no saved session. An unreadable page or browser error
 means authentication is unknown, not that login is required.
+For a stale-page or detached-frame error, rediscover the page in the same
+provider and retry once, as described in the reference. Do not start a new
+profile or ask for login to handle a tool error.
 
 After the user confirms sign-in, recheck the SAME page/context and follow the
 state transitions in the reference. Avoid repeating identical prompts without

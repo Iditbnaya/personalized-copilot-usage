@@ -16,3 +16,7 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -B -m unittest discover -s skills/personalized-usage/tests -v
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: node --test skills/personalized-usage/tests/browser/session_reuse.test.cjs

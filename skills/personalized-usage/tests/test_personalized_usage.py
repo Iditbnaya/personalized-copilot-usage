@@ -94,6 +94,30 @@ class UsageTests(unittest.TestCase):
         self.assertIn("do not assert a profile mismatch as the only possible cause", reference)
         self.assertIn("Do not interrupt login/SSO", reference)
 
+    def test_browser_guidance_keeps_provider_handles_separate(self):
+        reference = (Path(__file__).resolve().parents[1] /
+                     "references" / "browser-session.md").read_text(encoding="utf-8")
+        self.assertIn("Never check Playwright to decide whether the native canvas is signed in", reference)
+        self.assertIn("native route is tool-unavailable, not signed out", reference)
+        self.assertIn("does not supply that required `page_id`", reference)
+        self.assertIn("ask before switching", reference)
+
+    def test_browser_guidance_handles_observed_errors_without_login(self):
+        reference = (Path(__file__).resolve().parents[1] /
+                     "references" / "browser-session.md").read_text(encoding="utf-8")
+        self.assertIn("This is `unknown`,\nnot `authentication_required`", reference)
+        self.assertIn("retry the intended read/navigation once", reference)
+        self.assertIn("do not choose the first arbitrary text match", reference)
+        self.assertIn("`browser_close` may close only", reference)
+
+    def test_failed_capability_lookup_is_not_absent_capability(self):
+        reference = (Path(__file__).resolve().parents[1] /
+                     "references" / "browser-session.md").read_text(encoding="utf-8")
+        normalized = " ".join(reference.split())
+        self.assertIn("`unknown`, not proof that a capability is absent", normalized)
+        self.assertIn("Retry the lookup once", normalized)
+        self.assertIn("only a successful capability/tool listing", normalized)
+
     def test_overview_totals_have_financial_source_guards(self):
         skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Total tokens (input + output, derived)", skill)
