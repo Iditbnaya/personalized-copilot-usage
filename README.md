@@ -68,10 +68,23 @@ make missing history tools available.
 
 ## Keep your GitHub sign-in
 
-The skill reuses a connected GitHub tab and checks the page before requesting
-login. It leaves the browser open and never clears or exports cookies. If you
-confirm sign-in but the connected browser still shows the login form, it stops
-repeating the login prompt and explains the browser-profile mismatch.
+The skill checks the **current authentication state** on each account-usage
+request, using the connected browser's existing profile:
+
+- **Valid session or saved login cookies:** reuse them without prompting for login.
+- **No valid session or an expired session:** prompt for the login/verification
+  GitHub requires in that same browser, then recheck and continue.
+- **Browser or page error:** report the access problem, not a login requirement.
+
+An old login tab or no open GitHub tab does not establish that the user is
+signed out: the skill checks Copilot settings with the same profile first.
+Cookies are reused by the browser, never read, exported, or cleared by the
+skill. Cookie presence alone is not proof of valid authentication.
+
+After you confirm login, it rechecks the same context. If authentication is
+still required, it helps identify the correct connected window or unfinished
+verification step rather than repeating identical instructions. Later session
+expiry can still trigger a new login prompt; there is no once-only restriction.
 
 **Signing in to your normal browser does not sign in a separate automation
 browser.** For standalone Playwright MCP, configure a stable, private

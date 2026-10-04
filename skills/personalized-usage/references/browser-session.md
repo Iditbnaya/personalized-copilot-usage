@@ -5,6 +5,24 @@ transfer login from a normal browser, an editor, or GitHub CLI into a different
 automation profile. Keep authentication in the browser's own private profile;
 never serialize it into skill files, screenshots, messages, or a repository.
 
+## Current-state decision
+
+Re-evaluate authentication on every account-usage request, after the navigation
+or refresh described below. Do not decide from a remembered login, a previous
+prompt, an old login-page snapshot, or the mere existence of cookies.
+
+| Observed state after checking GitHub | Action |
+|---|---|
+| `signed_in`: GitHub accepts the session for the intended account | Reuse the session and read available usage. Do not prompt for login. If the card is missing, report that data limitation without discarding the valid session. |
+| `authentication_required`: GitHub displays a login, verification, or SSO challenge | Prompt the user to complete the required authentication in this same browser, wait, then recheck. This applies to both first-time login and expired/revoked sessions. |
+| `unknown`: no browser access, loading/error page, or insufficient evidence of identity | Explain or diagnose the specific access problem. Do not infer that the user is logged out or ask them to log in as a generic fix. |
+| `account_mismatch`: the session belongs to a different or ambiguous account | Ask the user to confirm/select their intended account before reading usage. Do not silently switch accounts. |
+
+Let the browser reuse cookies automatically on navigation. Valid saved cookies
+may restore a session even when no GitHub tab is open. Expired cookies may be
+present while authentication is still required. Never inspect, copy, or export
+cookie values to distinguish these cases; use GitHub's rendered response.
+
 ## Reuse before authenticating
 
 1. Prefer a personal GitHub page already shared/connected through the host's
@@ -13,7 +31,11 @@ never serialize it into skill files, screenshots, messages, or a repository.
    without a readable page handle is not proof of automation access.
 2. If using Playwright MCP, call `browser_tabs` with `action: "list"` first.
    Select a relevant existing GitHub tab using its returned index, then read
-   its page. Do not open another browser or create an isolated context.
+   its page. If there is no suitable tab, open a page in the SAME configured
+   browser profile/context so its saved cookies are reused; a new page is not
+   a new profile. Do not launch a separate browser or isolated context merely
+   to check usage. If the tool must start a browser, use its existing configured
+   persistent profile or supported existing-browser connection.
 3. Verify the intended account from the page's rendered identity. If multiple
    accounts are present or an identity conflicts, ask which personal account
    to use. Never switch accounts silently or read another person's usage.
@@ -21,6 +43,11 @@ never serialize it into skill files, screenshots, messages, or a repository.
    the selected page to `https://github.com/settings/copilot`. Use the host's
    reload/navigation tool when available. Read the current rendered card.
    Do not reuse old figures as if they were freshly collected.
+   If an old tab is on the login page and no user authentication is currently
+   in progress, first navigate once to Copilot settings in the SAME context.
+   This lets a session established in another tab or saved cookies take effect
+   BEFORE deciding whether to ask for login. Do not interrupt login/SSO while
+   the user is completing it.
 5. If the card and correct identity are visible, report the values without
    asking for login. A missing card, 403, 404, loading state, network error,
    or browser-tool error does not by itself prove the user is signed out.
@@ -29,23 +56,35 @@ Tool names may be prefixed differently in each host. Use available tools, not
 invented ones. If shared browser tools need a page ID, obtain it through their
 documented page-discovery operation; never use a canvas ID or URL in its place.
 
-## Handle an actual sign-in page once
+## Prompt and recheck when authentication is required
 
-Only when the connected page visibly shows a GitHub login, verification, or
-SSO challenge, ask the user to complete it in that SAME automation/shared
-browser window. Do not ask them to sign in at billing settings. Leave the
-window and tab open while waiting.
+When the current check yields `authentication_required`, ask the user to
+complete the visible login, verification, or SSO step in that SAME
+automation/shared browser window. Do not ask them to sign in at billing
+settings. Leave the window and tab open while waiting. Do not ask for another
+login while a usable `signed_in` session is available.
 
 After confirmation, read the SAME page/context again. If it remains on a login
 form, navigate once to Copilot settings in that same context and reread it.
-If authentication is still absent, stop the login loop. Explain that the
-connected browser does not have the reported sign-in; this may be a different
-profile/window, an expired session, or an incomplete verification step.
-Do not tell the user their password is wrong or keep requesting another login.
+Classify the NEW response with the state table: `signed_in` continues without
+another prompt; `unknown` reports the access problem; `account_mismatch`
+requires account clarification.
+
+If it still yields `authentication_required`, stop the login loop of identical
+instructions. Explain that authentication has not reached THIS connected
+browser; do not assert a profile mismatch as the only possible cause. Ask the
+user to complete the displayed step in this specific connected window or to
+connect the browser where they are already signed in. Recheck after that
+recovery action. Do not tell the user their password is wrong.
 
 Offer the host's supported "share/connect existing browser tab" mechanism if
 one is actually available. Otherwise explain the persistent-profile setup
 below. Continue the local model/token report independently.
+
+This is NOT a once-per-conversation login restriction. A later
+`authentication_required` state must prompt again when appropriate, even if a
+previous report succeeded. The decision follows current authentication, not
+prompt history. Never declare success until a fresh page check verifies it.
 
 ## Keep authentication in the browser
 

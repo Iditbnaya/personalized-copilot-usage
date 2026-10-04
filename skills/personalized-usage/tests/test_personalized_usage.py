@@ -66,6 +66,34 @@ class UsageTests(unittest.TestCase):
         self.assertNotIn("--storage-state", args)
         self.assertIn("YOUR_USER", args[args.index("--user-data-dir") + 1])
 
+    def test_browser_guidance_defines_current_state_actions(self):
+        root = Path(__file__).resolve().parents[1]
+        skill = (root / "SKILL.md").read_text(encoding="utf-8")
+        reference = (root / "references" / "browser-session.md").read_text(encoding="utf-8")
+        rows = [line for line in reference.splitlines() if line.startswith("| `")]
+        expected = {
+            "signed_in": "Do not prompt for login",
+            "authentication_required": "Prompt the user",
+            "unknown": "Do not infer that the user is logged out",
+            "account_mismatch": "Ask the user to confirm/select",
+        }
+        self.assertEqual(len(rows), len(expected))
+        for state, action in expected.items():
+            with self.subTest(state=state):
+                row = next(line for line in rows if line.startswith(f"| `{state}`:"))
+                self.assertIn(action, row)
+        self.assertIn("This is NOT a once-per-conversation login restriction", reference)
+        self.assertNotIn("do not repeat the login\nprompt if it is still signed out", skill)
+
+    def test_browser_guidance_checks_saved_session_before_login_prompt(self):
+        reference = (Path(__file__).resolve().parents[1] /
+                     "references" / "browser-session.md").read_text(encoding="utf-8")
+        self.assertIn("a new page is not\n   a new profile", reference)
+        self.assertIn("BEFORE deciding whether to ask for login", reference)
+        self.assertIn("Expired cookies may be", reference)
+        self.assertIn("do not assert a profile mismatch as the only possible cause", reference)
+        self.assertIn("Do not interrupt login/SSO", reference)
+
     def test_overview_totals_have_financial_source_guards(self):
         skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Total tokens (input + output, derived)", skill)

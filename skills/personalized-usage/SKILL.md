@@ -69,13 +69,22 @@ ask for billing permissions, require a PAT, or request administrator access.
    unavailable in the self-service view, without trying admin APIs.
 
 No Copilot CLI, GitHub CLI, Python, billing role, or pasted usage output is
-needed for this browser path. Reuse an existing authenticated browser session
-without asking the user to sign in again. Ask for sign-in only after an actual
-GitHub authentication page is observed in the connected browser. After the
-user says they signed in, recheck the SAME page/context; do not repeat the login
-prompt if it is still signed out. Follow the browser-profile mismatch procedure
-in the reference instead. Never enter passwords or request credentials in chat.
-Keep the browser open; do not clear its cookies or export authentication state.
+needed for this browser path. On every account-usage request, check the current
+authentication state using the connected browser's existing profile and cookies.
+If GitHub accepts the session for the intended account, reuse it without a
+login prompt. If GitHub requires login or reauthentication, prompt the user to
+complete it in that same browser, then recheck and continue. An earlier login
+or earlier prompt does not override the current state. A cookie's mere presence
+does not prove it is valid; let the browser send it normally without reading it.
+No open tab does not mean no saved session. An unreadable page or browser error
+means authentication is unknown, not that login is required.
+
+After the user confirms sign-in, recheck the SAME page/context and follow the
+state transitions in the reference. Avoid repeating identical prompts without
+a new check or recovery action, but do not suppress a necessary login prompt
+when a later check confirms the session has expired. Never enter passwords or
+request credentials in chat. Keep the browser open; do not clear its cookies
+or export authentication state.
 
 If browser tools are unavailable, give the Copilot settings link and explain
 that the current assistant cannot read the page automatically. The user can
