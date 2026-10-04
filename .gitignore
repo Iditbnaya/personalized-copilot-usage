@@ -5,3 +5,10 @@ __pycache__/
 .env.*
 !.env.example
 usage-report*.json
+.playwright-mcp/
+browser-profile/
+browser-profiles/
+storage-state*.json
+storageState*.json
+cookies*.json
+cookies*.txt

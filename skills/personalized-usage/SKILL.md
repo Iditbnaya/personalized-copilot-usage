@@ -36,10 +36,14 @@ Assume this skill must work for ordinary organization-managed Copilot users.
 Do NOT run the billing script first. Do NOT send these users to billing settings,
 ask for billing permissions, require a PAT, or request administrator access.
 
-1. Use available browser tools to navigate to
-   https://github.com/settings/copilot. If that page redirects or changes,
-   follow the signed-in profile menu's **Copilot settings** link using actual
-   page references. Do not guess alternate usage endpoints.
+1. Follow [Browser session reuse](references/browser-session.md) first. Prefer
+   an already-connected personal GitHub tab, and reuse the same browser context
+   and page handle throughout. Inspect its current page before navigating;
+   refresh the usage card when collecting current values. Navigate in that
+   context to https://github.com/settings/copilot only when needed. If that
+   page redirects or changes, follow the signed-in profile menu's **Copilot
+   settings** link using actual page references. Do not guess alternate usage
+   endpoints or start a new browser profile for each report.
 2. Verify the browser is signed in to the intended user's account. If the
    identity conflicts with a known current GitHub identity, stop and ask the
    user to select the correct account themselves. Do not assume that browser,
@@ -65,10 +69,13 @@ ask for billing permissions, require a PAT, or request administrator access.
    unavailable in the self-service view, without trying admin APIs.
 
 No Copilot CLI, GitHub CLI, Python, billing role, or pasted usage output is
-needed for this browser path. A GitHub sign-in is still required. If this
-automation browser is signed out, ask the user to sign in at **Copilot settings**
-themselves, not at billing settings. Never enter passwords or request credentials
-in chat.
+needed for this browser path. Reuse an existing authenticated browser session
+without asking the user to sign in again. Ask for sign-in only after an actual
+GitHub authentication page is observed in the connected browser. After the
+user says they signed in, recheck the SAME page/context; do not repeat the login
+prompt if it is still signed out. Follow the browser-profile mismatch procedure
+in the reference instead. Never enter passwords or request credentials in chat.
+Keep the browser open; do not clear its cookies or export authentication state.
 
 If browser tools are unavailable, give the Copilot settings link and explain
 that the current assistant cannot read the page automatically. The user can

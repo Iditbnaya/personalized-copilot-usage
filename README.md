@@ -7,6 +7,14 @@ No Copilot CLI installation or organization billing administrator role is
 required. This is an instruction-based skill, not an independent dashboard,
 extension, or universal telemetry collector.
 
+## Example report
+
+![Example detailed local model-usage report showing model names, input/output tokens, and cached-read tokens](docs/images/model-usage-example.png)
+
+User-contributed example of the detailed view, not live data. This screenshot
+includes optional API-event and session counts; current default reports hide
+API-event counts and include a derived total-token column.
+
 ## What it can report
 
 | Source | Reports | Requirements |
@@ -57,6 +65,26 @@ it. Reload or start a new host session to discover the installed skill.
 Other hosts may support project-scoped skills in `.github/skills`; consult
 their skill-loading documentation. A different installation path does not
 make missing history tools available.
+
+## Keep your GitHub sign-in
+
+The skill reuses a connected GitHub tab and checks the page before requesting
+login. It leaves the browser open and never clears or exports cookies. If you
+confirm sign-in but the connected browser still shows the login form, it stops
+repeating the login prompt and explains the browser-profile mismatch.
+
+**Signing in to your normal browser does not sign in a separate automation
+browser.** For standalone Playwright MCP, configure a stable, private
+`--user-data-dir` outside the repository (without `--isolated`) to retain that
+browser's login across reports/projects. Only one browser instance may use
+the profile at a time. A built-in host browser needs its own supported profile
+settings; a separate CLI configuration may have no effect.
+
+See [Browser session reuse and setup](skills/personalized-usage/references/browser-session.md)
+for the configuration example and optional existing-browser connection.
+The skill cannot guarantee retention if the host uses temporary profiles or
+GitHub/SSO expires the session. Cookies and auth state must never be uploaded
+to this repository.
 
 ## Use
 
@@ -116,8 +144,9 @@ an empty report does not mean zero Copilot activity.
   spendable shared capacity.
 
 Usage values can be sensitive. Review reports before sharing them.
-The repository contains only reusable instructions, code, and synthetic tests,
-not collected usage records or credentials.
+The repository contains reusable instructions, code, synthetic tests, and a
+user-contributed example screenshot. It does not collect usage records or
+store credentials, browser profiles, or authentication state.
 
 ## Development
 

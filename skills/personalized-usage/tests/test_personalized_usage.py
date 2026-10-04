@@ -42,6 +42,30 @@ class FakeGitHub:
 
 
 class UsageTests(unittest.TestCase):
+    def test_browser_reuse_precedes_sign_in_and_stops_login_loop(self):
+        root = Path(__file__).resolve().parents[1]
+        skill = (root / "SKILL.md").read_text(encoding="utf-8")
+        reference = (root / "references" / "browser-session.md").read_text(encoding="utf-8")
+        self.assertIn("references/browser-session.md", skill)
+        self.assertIn('`action: "list"` first', reference)
+        self.assertIn("read the SAME page/context again", reference)
+        self.assertIn("stop the login loop", reference)
+        self.assertIn("Do not export `storageState`", reference)
+        self.assertIn("A host\nwith a built-in browser may ignore", reference)
+        self.assertIn("Do not call `browser_close`", reference)
+
+    def test_documented_browser_profile_is_persistent_not_isolated(self):
+        import re
+        reference = (Path(__file__).resolve().parents[1] /
+                     "references" / "browser-session.md").read_text(encoding="utf-8")
+        configs = re.findall(r"```json\n(.*?)\n```", reference, re.S)
+        self.assertEqual(len(configs), 1)
+        args = json.loads(configs[0])["mcpServers"]["playwright"]["args"]
+        self.assertIn("--user-data-dir", args)
+        self.assertNotIn("--isolated", args)
+        self.assertNotIn("--storage-state", args)
+        self.assertIn("YOUR_USER", args[args.index("--user-data-dir") + 1])
+
     def test_overview_totals_have_financial_source_guards(self):
         skill = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("Total tokens (input + output, derived)", skill)
