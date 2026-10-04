@@ -152,17 +152,33 @@ as the complete population.
 ## Output
 
 Lead with **Local Copilot app activity**, requested date range and collection
-time. Use a model table with model, input tokens, output tokens, derived
-total tokens (input + output), cache read tokens, and estimated USD from
-`token-pricing.md`. Add a Total row across
+time. Use a model table with model, plain input tokens, output tokens
+(reasoning), derived total tokens (input + output), and estimated USD from
+`token-pricing.md`. Use `reasoning_tokens` for the output parenthetical,
+including the Total row. Put `cache_read_tokens` and `cache_write_tokens` in
+a separate **Cache details** table after the main table and summary, with
+**Model | Cached read tokens | Cache write tokens** and a Total row.
+Do not put cache annotations in input cells or duplicate a cache column.
+Omit cache rows/columns with no values, or the whole section if empty.
+Missing reasoning counters omit only the annotation; recorded zero remains visible.
+Use each field's sample count to mark partial counters, not to fill gaps with
+zero. Reasoning must not be added to output, total tokens, or cost again.
+The pricing query does not include reasoning; retrieve it from the model query
+with the same date range and capture cutoff instead of inferring it.
+Add a Total row across
 all models, preserving missing-sample and truncation warnings. Do not add cache
 or reasoning counters into total tokens. Keep event counts internal for completeness checks; do not
 display them unless the user explicitly asks for API-call/event counts.
 Include other fields only when useful to the question.
+Follow SKILL.md's available-values-only presentation: omit wholly empty
+columns and summary rows, keep genuine zero values, and leave mixed missing
+cells empty. Preserve useful model rows even when a price is missing. Do not
+display routine lookup statuses. Partial totals still need a brief coverage note.
 Footnote that the report covers available local records only, and is not
 account-wide billing usage. If a browser credit card is available, show it in
 a separate **GitHub current-cycle credits** section with its own period.
 The default overview estimates per-model USD and a credit equivalent locally,
 without a browser. Actual account credits, remaining quota, and billed charges
-require their separate source when explicitly requested. Name any missing
-pricing input precisely, rather than treating all dollar values as unavailable.
+require their separate source when explicitly requested. Do not display
+unrequested or missing account metrics as placeholder rows. Briefly explain
+missing pricing inputs only when they affect a requested answer or total.

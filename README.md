@@ -9,11 +9,18 @@ extension, or universal telemetry collector.
 
 ## Example report
 
-![Example local usage report showing models, input/output and total tokens, cached tokens, and estimated USD cost](docs/images/model-usage-example.png)
+**Models, tokens, and estimated cost**
 
-User-contributed example of the default local report, not live data. It shows
-token totals and estimated per-model USD costs. These estimates cover recorded
-local activity and are not actual billed charges.
+![Local model usage showing input tokens, output with reasoning, total tokens, and estimated USD](docs/images/model-usage-example.png)
+
+**Summary and cache details**
+
+![Usage totals and estimated credit equivalents followed by per-model cached-read and cache-write tokens](docs/images/cache-details-example.png)
+
+User-contributed examples of the default local report, not live data.
+Reasoning stays beside output tokens; cached reads and writes appear in a
+separate details table. These estimates cover recorded local activity and
+are not actual billed charges.
 
 ## What it can report
 
@@ -126,11 +133,27 @@ Invoke `/personalized-usage` in hosts supporting user-invocable skills, or ask:
 Model questions use local history first and are not blocked on browser sign-in.
 Credit questions use Copilot settings. The reports identify their source,
 coverage, period, missing fields, and derived calculations.
-Default model tables show **Model | Input tokens | Output tokens | Total tokens | Cached tokens | Estimated USD**,
+Default model tables show **Model | Input tokens | Output tokens (reasoning) | Total tokens | Estimated USD**,
 with an overall Total row. Total tokens are derived as input + output; cached
 and reasoning counters are not added again. Missing samples are labeled partial.
+Input cells remain plain counts; output can read `7,400 (1,700 reasoning)`.
+At the bottom, a separate **Cache details** table shows
+**Model | Cached read tokens | Cache write tokens**, with a Total row.
+Models and columns without any cache values are omitted; if no cache values
+are available, the whole section is omitted. Cache reads and writes stay separate.
+Reasoning is part of output, not extra tokens
+or another cost. Missing counters produce no parenthetical; recorded zero is
+preserved. The same format applies to the Total row.
 API-event counts are omitted unless explicitly requested; they remain internal
 for checking whether token records are complete.
+
+**Results show available values only.** There are no "Not requested",
+"Unavailable", or success-status rows. Unrequested account metrics and wholly
+empty columns/sections are omitted. Known zero values remain visible; missing
+cells in otherwise useful columns are left empty. Successful account lookups
+add their actual values to the summary with the appropriate period/scope.
+Materially partial totals retain a short coverage note, and failures affecting
+an explicitly requested metric are explained briefly outside the tables.
 
 **The default cost report needs no browser login.** It estimates local token
 usage using [GitHub Copilot's published model rates](https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing),

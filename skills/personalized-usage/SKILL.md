@@ -87,8 +87,9 @@ ask for billing permissions, require a PAT, or request administrator access.
    If only consumption is visible, remaining and utilization are unavailable.
    Preserve a displayed reset date verbatim; do not invent its time or timezone.
 5. Only open additional personal usage detail links actually exposed on this
-   page. If history, models, or tokens are absent, explicitly mark them as
-   unavailable in the self-service view, without trying admin APIs.
+   page. Omit absent history, models, or token metrics from the result tables,
+   without trying admin APIs. Explain the limitation briefly outside the table
+   only if it prevents answering an explicitly requested metric.
 
 No Copilot CLI, GitHub CLI, Python, billing role, or pasted usage output is
 needed for this browser path. On every account-usage request, check the current
@@ -209,8 +210,9 @@ References:
   credits. Do not invent a currency if the source does not specify one.
 - Credit/request billing quantities are not raw model invocation counts or
   input/output tokens. These APIs do not provide those token counts, limits,
-  remaining quota, usage percentages, or reset timestamps. Say unavailable
-  from this API, and use visible self-service Copilot values if accessible.
+  remaining quota, usage percentages, or reset timestamps. Use visible
+  self-service Copilot values if accessible; otherwise omit those metrics
+  from the result tables.
 - Never estimate tokens from credits, spend, characters, or model multipliers.
 - If a separate authorized personal source provides token counts, prefer its
   explicit total; otherwise input + output is valid only for compatible counts.
@@ -228,27 +230,84 @@ References:
 
 ## Answer
 
-### Required overview totals
+### Available values only
 
-Include these summary metrics for a full overview, each with its source and
-period. A default/local overview does not require account lookup; identify the
-actual-account portion as not requested unless the user asked for it:
+Render only metrics with a retrieved numeric value or a valid, clearly labeled
+derived/estimated value. Omit rows for unavailable, unrequested, or unverified
+metrics; never fill a row with "Not requested", "Unavailable", "N/A", or
+"Not exposed". Do not show successful lookup/authentication status messages
+such as "Works", "Success", or "Reused existing sign-in"; show the actual values.
+This is a presentation rule, not permission to discard errors or diagnostics
+inside the calculator.
 
-| Metric | Value | Scope |
-|---|---|---|
-| Total tokens (input + output, derived) | Recorded total, partial total, or unavailable | Local app records for the requested range |
-| Estimated token cost (USD) | Decimal estimate at verified GitHub Copilot model rates | Priced local records only; disclose assumptions and exclusions |
-| Estimated AI credit equivalent | Estimated USD divided by the verified USD/credit rate | Same priced local records; not measured account credits |
-| Total AI credits consumed | Source-reported total or unavailable | Account current cycle, or authorized personal billing range |
-| Credit usage value (USD, derived) | AI credits consumed multiplied by the verified published USD/credit rate, or a specific missing-source reason | Same scope and period as those credits; not an invoice |
-| Actual billed usage cost (USD) | Authorized billed amount, or not exposed by the available source | Exact scope and period of the billing source |
+Use a compact **Metric | Value** summary with only available totals. Keep
+the shared source, period, and capture time in the report header/footnote;
+add a scope/period column only if the displayed metrics use different scopes.
+Candidate metrics (include each only when it has a value):
 
-For local model rows, show **Model | Input tokens | Output tokens | Total
-tokens | Cached tokens | Estimated USD** and a **Total** row covering all returned models.
+- Total tokens (input + output, derived).
+- Estimated token cost (USD).
+- Estimated AI credit equivalent (not measured account credits).
+- Total AI credits consumed (only from an actual account source).
+- Credit usage value (USD, derived from actual consumed credits).
+- Actual billed usage cost (USD) (only an authorized billed amount).
+
+Do not fetch additional sources solely to fill an otherwise unrequested row.
+A local overview normally contains only the first three summary metrics.
+When a requested account lookup succeeds, add its available values to the
+summary with their own scope/period, rather than announcing that it worked.
+
+For model tables, omit columns with no values across all models. If a column
+has some values, leave individual missing cells empty; do not fabricate zeros
+or drop a model that has other useful token data. Genuine zero is a valid value
+and must remain visible. Omit wholly empty tables/sections.
+
+Keep a short coverage note when exclusions make a total partial. Explicitly
+requested metrics that cannot be retrieved get one brief explanation outside
+the tables. A failed lookup that affects the requested answer must be reported,
+not disguised as successful complete coverage. If no values can be retrieved,
+return a concise no-data/error explanation instead of an empty report.
+
+For local model rows, show **Model | Input tokens | Output tokens
+(reasoning) | Total tokens | Estimated USD** and a **Total** row covering all
+returned models. Read cache and reasoning counters from the model query in
+`local-activity.md`; the pricing query alone does not return reasoning.
+
+Keep input cells as plain token counts, without cached parentheticals. When
+recorded, format output as `7,400 (1,700 reasoning)` using `reasoning_tokens`.
+This is an illustrative value, not current usage.
+
+Omit a parenthetical when its counter is missing; preserve recorded zero.
+If only some records supply it, mark that counter partial and retain a concise
+coverage note. Use the same source, period, and capture cutoff as the parent
+token totals. Apply this format to the Total row too, without treating missing
+counters as zero. Never derive reasoning as output minus visible response text.
+Reasoning is a subset of output, not additional tokens or an extra charge.
+If a reasoning counter is negative or exceeds its corresponding output count,
+omit the invalid annotation and flag the inconsistency briefly.
 Compute total tokens as input + output without adding cached/reasoning counters.
 If either field has missing samples, label the sum "partial recorded total";
 if a whole component is unavailable, do not present the sum as total tokens.
 Do not total a truncated model table as the whole population.
+
+### Cache details at the bottom
+
+After the main model table and available-value summary, add **Cache details**
+as the final data table, before the brief source/estimate note:
+
+**Model | Cached read tokens | Cache write tokens**
+
+Use `cache_read_tokens` and `cache_write_tokens` from the same source, period,
+and capture cutoff as the main table. List models in the same order as the
+main table and include a Total row. Do not combine reads and writes under
+an ambiguous cached total. Do not repeat cache counts in the main table.
+
+Only include models with at least one recorded cache value and columns with
+at least one value. Keep recorded zero; leave missing cells empty. Omit the
+entire Cache details section when no cache counters are available. Mark
+partial cache totals with a concise coverage note; never fill gaps with zero.
+Moving cache data changes layout only: it must not change token totals or
+estimated USD. Cache counts are not additional tokens to add to the main total.
 
 Credits and dollar cost are separate from tokens, and from each other.
 Prefer the source's own total credits. Otherwise sum compatible grossQuantity
@@ -297,34 +356,37 @@ multipliers, or another provider's API pricing. Do not treat
 usage cost as the Copilot subscription fee or the user's personal liability.
 
 For managed users whose self-service page has credits but no billed amount,
-still show the derived credit usage value. Label actual billed cost
-**Not exposed by the self-service usage page**; lack of this field does not
+still show the derived credit usage value and omit the actual billed cost row.
+If explicitly asked for billed charges, explain outside the table that they
+are not exposed by the self-service usage page; lack of this field does not
 invalidate the published-rate conversion. Do not claim a permission denial
 without evidence, request admin/billing permissions, or open organization
 dashboards to fill the actual-charge field.
-When actual account credits are unavailable, retain the local token/estimated-cost report and clearly say
-credits were not retrieved. A previously reported credit value is historical
+When actual account credits are unavailable, retain the local token/estimated-cost
+report without empty account rows. Explain a failed credit lookup only when it
+was requested. A previously reported credit value is historical
 unless refreshed; timestamp it rather than passing it off as current.
 
 For simple questions, answer directly with scope and period. For an overview,
 show a compact summary and model table using available units and columns.
-Include source statuses and material omissions without dumping raw JSON.
+Keep routine success statuses out of the output. Briefly disclose material
+omissions or failures without dumping raw JSON or a diagnostic checklist.
 Do not report a missing value as zero, unlimited, or a successful full report.
 Clearly distinguish current-cycle self-service consumption, optional personal
 billing consumption, and total cross-product activity. Always name the actual
 source. Never respond to a managed user with instructions to sign into billing
 settings. No copied `/usage` output or CLI installation is required, but
 automatic reading depends on an accessible authenticated browser.
-For an account lookup, include a short status such as **Reused existing
-sign-in**, **Login required**, **Browser tool unavailable**, or **Lookup failed**,
-based on actual tool observations. No login prompt is expected when a valid
-session is reused. An unavailable source, an unrequested lookup, and an absent
-billed-cost field are different outcomes; do not collapse them into "unavailable."
+No login prompt is expected when a valid session is reused. Authentication and
+tool status remain internal unless user action is needed or a failure affects
+the requested answer. Never add status-only rows to a result table.
 
 For model/activity questions, lead with the local model table rather than a
 quota percentage. Show model identifier, input and output
-tokens, cached tokens when recorded, and estimated USD cost. Clearly label partial fields and
-coverage. Omit API-event counts from default tables and summaries; retain counts
+tokens with reasoning parentheticals on output when recorded, and estimated
+USD cost. Clearly label partial fields and
+coverage. Put cache counters only in the bottom Cache details table.
+Omit API-event counts from default tables and summaries; retain counts
 internally for completeness checks. Show them only if the user explicitly asks
 for API-call/event counts. Use plain Markdown and inline code for formulas, never duplicated
 LaTeX/HTML math. Call utilization **Percentage of displayed limit used**.

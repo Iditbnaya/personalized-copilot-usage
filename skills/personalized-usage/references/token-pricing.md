@@ -118,9 +118,18 @@ one cent rather than two independently rounded cents.
 
 ## Coverage and display
 
-- Show **Model | Input tokens | Output tokens | Total tokens | Cached tokens |
-  Estimated USD**, plus totals. Existing token totals remain source-based;
+- Show **Model | Input tokens | Output tokens (reasoning) | Total
+  tokens | Estimated USD**, plus totals. Obtain reasoning from the separate
+  model query using the same range/cutoff; this calculator's input query does
+  not include it. Put cached read/write counts in the bottom **Cache details**
+  table, not in input parentheticals. Keep its columns separate and add a
+  Total row only for the recorded values. This is layout only and does not
+  change the pricing formula or add extra tokens or charges. Existing token totals remain source-based;
   a model lacking pricing can still have token data.
+- Omit metric rows/columns that have no values. Keep known zero values and
+  useful model rows; leave missing cells in mixed columns empty. Do not add
+  unavailable/not-requested placeholders or success-status rows. Retain
+  calculator diagnostics internally and a short note for materially partial totals.
 - Label estimated credit equivalents separately from actual account credits.
   Do not fetch account balances merely to estimate local cost.
 - Use only sums of priced rows for a partial USD total and label it **partial
